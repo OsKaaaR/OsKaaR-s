@@ -1,0 +1,120 @@
+import json
+import os
+from fpdf import FPDF # type: ignore
+
+GREEN = "\033[92m"
+RED = "\033[91m"
+BLUE = "\033[94m"
+RESET = "\033[0m"
+
+finance = {}
+
+try:
+        file = open("finance.json", "r")
+        finance = json.load(file)
+except FileNotFoundError:
+        finance = {
+            "income" : 0,
+            "expenses" :{
+                "food" : 0,
+                "transport" : 0,
+                "Entertainment" : 0
+                },
+            "remainingBalance" : 0,
+        }
+
+def addExpenses(expType):
+        found = False
+        for key in finance["expenses"]:
+            if expType == key:
+                found = True
+                try:
+                    expamount = int(input("Enter Your Expenses amount: "))
+                    finance["expenses"][key] += expamount
+                    income = finance["income"]
+                    finance["remainingBalance"] = income - sum(finance["expenses"].values())
+                    print(f"{GREEN}Expenses Successfully Added!{RESET}")
+                except ValueError:
+                    print(f"{RED}Invalid amount entered! Please enter a number.{RESET}")
+        if not found:
+            print("Key is invalid")
+
+def saveFile():
+            file = open("finance.json","w")
+            json.dump(finance,file,indent =4)
+            file.close()
+            return print(f"{GREEN}Data saved successfully into finance.json !{RESET}")
+
+def isAdmin(username, password):
+    return username == "admin" and password == "admin123"
+
+
+while True:
+    print(f"\n{RED} -- Welcome Bassel -- {RESET}")
+    print(f"{BLUE} 1. Add Income {RESET}")
+    print(f"{BLUE} 2. Add Expenses {RESET}")
+    print(f"{BLUE} 3. Display Report {RESET}")
+    print(f"{BLUE} 4. Generate Monthly Summary {RESET}")
+    print(f"{BLUE} 5. Admin Commands {RESET}")
+    choice = input(f"{GREEN} - Enter Your Choice or type 'exit': {RESET}")
+
+    if choice == '1' :
+        income = int(input("Enter Your Income: "))
+        finance["income"] = income
+        print(f"{GREEN}Income Successfully Added!{RESET}")
+
+    elif choice == '2':
+        expType = input("Enter Your Expenses Type: ")
+        addExpenses(expType)
+
+    elif choice == '3':
+        print(finance)
+
+    elif choice == '4':
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(200, 10, txt="Monthly Report",
+            ln=True, align="C")
+        pdf.set_font("Arial", size=12)
+        expenses = finance["expenses"]
+        income = finance["income"]
+        pdf.multi_cell(0, 10, f"Total income: {income}")
+        pdf.multi_cell(0, 10, f"Total Expenses: {expenses}")
+        pdf.set_creator("OsKaaR")
+        pdf.output("monthlyreport.pdf")
+        print("Monthly report created Successfully!")
+
+    elif choice == '5':
+        os.system('cls')
+        username = input("Please Enter Admin username: ")
+        password = input("Please Enter Admin password: ")
+        if isAdmin(username,password):
+                # clear_screen()
+                print(f"\n{RED} -- Welcome To Admin Menu -- {RESET}")
+                print(f"{BLUE} 1. View File: {RESET}")
+                print(f"{BLUE} 2. Delete File: {RESET}")
+                print(f"{BLUE} 3. Save File: {RESET}")
+                choice = input(f"{GREEN} - Enter Your Choice or type 'exit': {RESET}")
+
+                if choice == '1':
+                    print(file.read())
+                elif choice == '2':
+                    try:
+                      file = open("finance.json", "r")
+                      os.remove("finance.json")
+                    except FileNotFoundError:
+                            print(f"{RED}There's No file created. {RESET}")
+                elif choice == '3':
+                    saveFile()
+        else:
+            print("\nInvalid User name or password.")
+    elif choice == 'exit':
+        print("Exiting..")
+        break
+    else:
+        print("\nInvalid input")
+        print("Exiting..")
+        break
